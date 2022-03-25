@@ -88,4 +88,9 @@ def format_guess(guess, target):
         else:
             colors.append(f"{grey}{gc}")
 
-    return "".join(colors) + nc
+    # lowercase non-options
+    ret = "".join(colors) + nc
+    if guess.lower() not in __getattr__("remaining"):
+        ret = ret.lower()
+
+    return ret
