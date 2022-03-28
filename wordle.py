@@ -30,7 +30,9 @@ def __getattr__(key):
             return _ordered[delta]
 
 
-def check_guess(guess, known, reqs) -> bool:
+def check_guess(guess: str, known: list[set[str]], reqs: dict[str, int]) -> bool:
+    """Verify that a guess fits within the known information."""
+
     in_word = defaultdict(int)
 
     for guess_char in guess:
@@ -51,7 +53,9 @@ def check_guess(guess, known, reqs) -> bool:
 word_matches = check_guess
 
 
-def find_colors(guess, target):
+def find_colors(guess: str, target: str) -> (list[str], list[str], list[str]):
+    """Break a guess into three arrays based on the color matches."""
+
     green = [""] * 5
     yellow = [""] * 5
     grey = list(guess)
@@ -86,7 +90,9 @@ def find_colors(guess, target):
     return green, yellow, grey
 
 
-def make_guess(guess, target, known, reqs):
+def make_guess(guess: str, target: str, known: list[set[str]], reqs: dict[str, int]):
+    """Make a guess against a target and add new information to the known/reqs."""
+
     green, yellow, grey = find_colors(guess, target)
     new_reqs = defaultdict(int)
 
@@ -118,7 +124,9 @@ def make_guess(guess, target, known, reqs):
                     known[j] -= {guess_char}
 
 
-def format_guess(guess, target):
+def format_guess(guess: str, target: str) -> str:
+    """Format a guess against a target using ANSI escape codes."""
+
     guess = guess.upper()
     target = target.upper()
 
