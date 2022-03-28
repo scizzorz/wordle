@@ -31,12 +31,17 @@ def __getattr__(key):
 
 
 def check_guess(guess, known, reqs) -> bool:
-    for r in reqs:
-        if r not in guess:
+    in_word = defaultdict(int)
+
+    for guess_char in guess:
+        in_word[guess_char] += 1
+
+    for char in reqs:
+        if in_word[char] < reqs[char]:
             return False
 
-    for char, poss in zip(guess, known):
-        if char not in poss:
+    for char, possible in zip(guess, known):
+        if char not in possible:
             return False
 
     return True
@@ -46,48 +51,17 @@ def check_guess(guess, known, reqs) -> bool:
 word_matches = check_guess
 
 
-def make_guess(guess, target, known, reqs):
-    # check for greens.
-    # this is a separate scan because guessing words like `PUREE` into `PURGE`
-    # will incorrectly flag the first E as yellow when it's actually grey.
-    green = []
-    indexes = list(range(5))
-    for i, guess_char, target_char in zip(indexes, guess, target):
-        if guess_char == target_char:
-            known[i] = {guess_char}
-            green.append(i)
+def find_colors(guess, target):
+    green = [""] * 5
+    yellow = [""] * 5
+    grey = list(guess)
 
-    guess = "".join(c for i, c in enumerate(guess) if i not in green)
-    target = "".join(c for i, c in enumerate(target) if i not in green)
-    indexes = [c for i, c in enumerate(indexes) if i not in green]
-
-    # check for yellows / greys.
-    for i, guess_char, target_char in zip(indexes, guess, target):
-        if guess_char in target:  # yellow
-            known[i] -= {guess_char}
-            reqs.add(guess_char)
-        else:  # grey
-            # eliminate this letter from everything _except_ green squares
-            for j in indexes:
-                known[j] -= {guess_char}
-
-
-def format_guess(guess, target):
-    guess = guess.upper()
-    target = target.upper()
-
-    green = "\033[32m"
-    yellow = "\033[34m"
-    grey = "\033[37m"
-    nc = "\033[00m"
-
+    # count letter frequency.
     in_word = defaultdict(int)
     encountered = defaultdict(int)
 
     for target_char in target:
         in_word[target_char] += 1
-
-    colors = [f"{grey}{guess_char}" for guess_char in guess]
 
     # check for greens.
     # this is a separate scan because guessing words like `PUREE` into `PURGE`
@@ -95,8 +69,8 @@ def format_guess(guess, target):
     for i, (guess_char, target_char) in enumerate(zip(guess, target)):
         if guess_char == target_char:
             encountered[guess_char] += 1
-            colors[i] = f"{green}{guess_char}"
-
+            green[i] = guess_char
+            grey[i] = ""
 
     # check for yellows.
     for i, (guess_char, target_char) in enumerate(zip(guess, target)):
@@ -106,10 +80,60 @@ def format_guess(guess, target):
 
         encountered[guess_char] += 1
         if guess_char != target_char and encountered[guess_char] <= in_word[guess_char]:
-            colors[i] = f"{yellow}{guess_char}"
+            yellow[i] = guess_char
+            grey[i] = ""
+
+    return green, yellow, grey
+
+
+def make_guess(guess, target, known, reqs):
+    green, yellow, grey = find_colors(guess, target)
+    new_reqs = defaultdict(int)
+
+    # check for greens.
+    for i, guess_char in enumerate(green):
+        if guess_char != "":
+            # only allow this slot to be this guess.
+            known[i] = {guess_char}
+            new_reqs[guess_char] += 1
+
+    # check for yellows.
+    for i, guess_char in enumerate(yellow):
+        if guess_char != "":
+            # don't allow this slot to be this guess.
+            known[i] -= {guess_char}
+            new_reqs[guess_char] += 1
+
+    # update the reqs dict with our new information.
+    for char in new_reqs:
+        if new_reqs[char] > reqs[char]:
+            reqs[char] = new_reqs[char]
+
+    # check for greys.
+    for i, guess_char in enumerate(grey):
+        # FIXME there's still probably a bug here.
+        if guess_char != "" and guess_char not in reqs:
+            for j in range(5):
+                if known[j] != {guess_char}:
+                    known[j] -= {guess_char}
+
+
+def format_guess(guess, target):
+    guess = guess.upper()
+    target = target.upper()
+
+    hi_green = "\033[32m"
+    hi_yellow = "\033[34m"
+    hi_grey = "\033[37m"
+    hi_nc = "\033[00m"
+
+    green, yellow, grey = find_colors(guess, target)
+    green = [f"{hi_green}{c}" for c in green]
+    yellow = [f"{hi_yellow}{c}" for c in yellow]
+    grey = [f"{hi_grey}{c}" for c in grey]
 
     # lowercase non-options
-    ret = "".join(colors) + nc
+    ret = "".join(f"{a}{b}{c}" for a, b, c in zip(green, yellow, grey)) + hi_nc
 
     remaining = __getattr__("ordered")
     if target.lower() in remaining:
