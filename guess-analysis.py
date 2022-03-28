@@ -26,13 +26,13 @@ if len(sys.argv) > 1:
 
         options = {word for word in words if word_matches(word, known, reqs)}
 
-        suffix = f"({', '.join(sorted(options))})"
+        suffix = f"({', '.join(sorted(format_guess(o, target) for o in options))})"
         print(
             format_guess(guess, target),
             "=>",
             len(options),
             "words" if len(options) != 1 else "word",
-            suffix if 1 < len(options) < 5 else "",
+            suffix if 1 < len(options) < 6 else "",
         )
 
     sys.exit(0)
