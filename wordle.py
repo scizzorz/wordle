@@ -90,7 +90,12 @@ def format_guess(guess, target):
 
     # lowercase non-options
     ret = "".join(colors) + nc
-    if guess.lower() not in __getattr__("remaining"):
+
+    remaining = __getattr__("ordered")
+    if target.lower() in remaining:
+        remaining = remaining[remaining.index(target.lower()):]
+
+    if guess.lower() not in remaining:
         ret = ret.lower()
 
     return ret
