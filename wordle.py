@@ -47,19 +47,29 @@ word_matches = check_guess
 
 
 def make_guess(guess, target, known, reqs):
-    # FIXME some better logic could be done here to handle duplicate letters better
+    # check for greens.
+    # this is a separate scan because guessing words like `PUREE` into `PURGE`
+    # will incorrectly flag the first E as yellow when it's actually grey.
+    green = []
+    indexes = list(range(5))
+    for i, guess_char, target_char in zip(indexes, guess, target):
+        if guess_char == target_char:
+            known[i] = {guess_char}
+            green.append(i)
 
-    for i, gchar, tchar, poss in zip(range(5), guess, target, known):
-        if gchar == tchar:  # green
-            known[i] = {gchar}
-        elif gchar in target:  # yellow
-            known[i] -= {gchar}
-            reqs.add(gchar)
+    guess = "".join(c for i, c in enumerate(guess) if i not in green)
+    target = "".join(c for i, c in enumerate(target) if i not in green)
+    indexes = [c for i, c in enumerate(indexes) if i not in green]
+
+    # check for yellows / greys.
+    for i, guess_char, target_char in zip(indexes, guess, target):
+        if guess_char in target:  # yellow
+            known[i] -= {guess_char}
+            reqs.add(guess_char)
         else:  # grey
             # eliminate this letter from everything _except_ green squares
-            for j in known:
-                if j != {gchar}:
-                    j -= {gchar}
+            for j in indexes:
+                known[j] -= {guess_char}
 
 
 def format_guess(guess, target):
@@ -74,19 +84,29 @@ def format_guess(guess, target):
     in_word = defaultdict(int)
     encountered = defaultdict(int)
 
-    for tc in target:
-        in_word[tc] += 1
+    for target_char in target:
+        in_word[target_char] += 1
 
-    colors = []
+    colors = [f"{grey}{guess_char}" for guess_char in guess]
 
-    for gc, tc in zip(guess, target):
-        encountered[gc] += 1
-        if gc == tc:
-            colors.append(f"{green}{gc}")
-        elif gc != tc and encountered[gc] <= in_word[gc]:
-            colors.append(f"{yellow}{gc}")
-        else:
-            colors.append(f"{grey}{gc}")
+    # check for greens.
+    # this is a separate scan because guessing words like `PUREE` into `PURGE`
+    # will incorrectly flag the first E as yellow when it's actually grey.
+    for i, (guess_char, target_char) in enumerate(zip(guess, target)):
+        if guess_char == target_char:
+            encountered[guess_char] += 1
+            colors[i] = f"{green}{guess_char}"
+
+
+    # check for yellows.
+    for i, (guess_char, target_char) in enumerate(zip(guess, target)):
+        # skip greens.
+        if guess_char == target_char:
+            continue
+
+        encountered[guess_char] += 1
+        if guess_char != target_char and encountered[guess_char] <= in_word[guess_char]:
+            colors[i] = f"{yellow}{guess_char}"
 
     # lowercase non-options
     ret = "".join(colors) + nc
