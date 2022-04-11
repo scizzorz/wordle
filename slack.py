@@ -33,7 +33,7 @@ def main(event, context):
 
         elif typ == "app_mention":
             print("Event text:", event["text"])
-            _, *guesses = event["text"].split()
+            _, *guesses = event["text"].lower().split()
             try:
                 idx = int(guesses[0])
                 guesses = guesses[1:]
@@ -46,9 +46,17 @@ def main(event, context):
             for line in resp:
                 print(line)
 
-            # if these don't exist we just quit I guess
+            post_text = [
+                "```" + "\n".join(resp) + "```",
+            ]
+
+            for g in guesses:
+                if g in ordered and ordered.index(g) < ordered.index(target):
+                    post_text.append(f"`{g}` was Wordle {ordered.index(g)}")
+
+            # if channel or thread_ts don't exist we just quit (read: "die") I guess
             post = {
-                "text": "```" + "\n".join(resp) + "```",
+                "text": "\n".join(post_text),
                 "channel": event["channel"],
                 "thread_ts": event["thread_ts"],
             }
