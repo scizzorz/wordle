@@ -59,6 +59,7 @@ def main(event, context):
                 "text": "\n".join(post_text),
                 "channel": event["channel"],
                 "thread_ts": event["thread_ts"],
+                "icon_url": "https://freewordle.org/images/wordle-game-icon-512.png",
             }
 
             json_data = json.dumps(post)

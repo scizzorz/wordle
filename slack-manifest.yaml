@@ -2,13 +2,14 @@ display_information:
   name: Wordle Analyzer
 features:
   bot_user:
-    display_name: Wordle Analyzer
+    display_name: Wordlebot
     always_online: true
 oauth_config:
   scopes:
     bot:
       - app_mentions:read
       - chat:write
+      - chat:write.customize
 settings:
   event_subscriptions:
     request_url: FIXME
