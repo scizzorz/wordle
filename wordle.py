@@ -124,7 +124,7 @@ def make_guess(guess: str, target: str, known: list[set[str]], reqs: dict[str, i
                     known[j] -= {guess_char}
 
 
-def format_guess(guess: str, target: str) -> str:
+def format_guess(guess: str, target: str, colored: bool = True) -> str:
     """Format a guess against a target using ANSI escape codes."""
 
     guess = guess.upper()
@@ -134,6 +134,9 @@ def format_guess(guess: str, target: str) -> str:
     hi_yellow = "\033[34m"
     hi_grey = "\033[37m"
     hi_nc = "\033[00m"
+
+    if not colored:
+        hi_green = hi_yellow = hi_grey = hi_nc = ""
 
     green, yellow, grey = find_colors(guess, target)
     green = [f"{hi_green}{c}" for c in green]
