@@ -1,4 +1,5 @@
 from collections import defaultdict
+from urllib import request
 from wordle import format_guess
 from wordle import make_guess
 from wordle import ordered
@@ -6,8 +7,11 @@ from wordle import today
 from wordle import word_matches
 from wordle import words
 import json
+import os
 import string
 import sys
+
+token = os.environ["TOKEN"].strip()
 
 
 def main(event, context):
@@ -15,15 +19,21 @@ def main(event, context):
     slack_body = event.get("body")
     if slack_body is not None:
         print(f"Received Slack message: {slack_body}")
-        event = json.loads(slack_body)
+        root = event = json.loads(slack_body)
         typ = event.get("type")
+
+        if typ == "event_callback":
+            print("Unpacking event callback")
+            event = event["event"]
+            typ = event.get("type")
 
         if typ == "url_verification":
             print("Responding to verification challenge")
             return {"statusCode": 200, "body": event["challenge"]}
 
         elif typ == "app_mention":
-            guesses = event["text"].split()
+            print("Event text:", event["text"])
+            _, *guesses = event["text"].split()
             try:
                 idx = int(guesses[0])
                 guesses = guesses[1:]
@@ -31,7 +41,33 @@ def main(event, context):
             except ValueError:
                 target = today
 
+            print(f"Guessing {guesses} against {target!r}")
             resp = guess(target, guesses)
+            for line in resp:
+                print(line)
+
+            # if these don't exist we just quit I guess
+            post = {
+                "text": "```" + "\n".join(resp) + "```",
+                "channel": event["channel"],
+                "thread_ts": event["thread_ts"],
+            }
+
+            json_data = json.dumps(post)
+            req = request.Request(
+                "https://slack.com/api/chat.postMessage",
+                data=json_data.encode("ascii"),
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {token}",
+                },
+            )
+
+            with request.urlopen(req) as msg_resp:
+                msg_resp_body = json.load(msg_resp)
+
+            print("Slack response:", msg_resp_body)
+
             return {"statusCode": 200, "body": "\n".join(resp)}
 
     return {"statusCode": 200, "body": json.dumps("hello")}

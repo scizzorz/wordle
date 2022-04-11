@@ -53,6 +53,12 @@ resource "aws_lambda_function" "lambda" {
   source_code_hash = filebase64sha256("lambda.zip")
 
   runtime = "python3.9"
+
+  environment {
+    variables = {
+      TOKEN = file("token")
+    }
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_policy" {
