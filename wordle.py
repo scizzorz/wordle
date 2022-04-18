@@ -118,7 +118,15 @@ def make_guess(guess: str, target: str, known: list[set[str]], reqs: dict[str, i
     # check for greys.
     for i, guess_char in enumerate(grey):
         # FIXME there's still probably a bug here.
-        if guess_char != "" and guess_char not in reqs:
+        if guess_char == "":
+            continue
+
+        # definitely doesn't fit in this spot
+        known[i] -= {guess_char}
+
+        # but it might still fit somewhere else, so only remove it from other spots
+        # if we don't require it
+        if guess_char not in reqs:
             for j in range(5):
                 if known[j] != {guess_char}:
                     known[j] -= {guess_char}
