@@ -1,6 +1,7 @@
 from collections import defaultdict
 from wordle import format_guess
 from wordle import make_guess
+from wordle import ordered
 from wordle import today
 from wordle import word_matches
 from wordle import words
@@ -18,6 +19,12 @@ known = [
 reqs = defaultdict(int)
 
 target, *guesses = sys.argv[1:]
+
+try:
+    target = ordered[int(target)]
+except:
+    pass
+
 if target == "-":
     target = today
 
