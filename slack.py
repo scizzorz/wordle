@@ -59,7 +59,7 @@ def main(event, context):
             for g in guesses:
                 if g in ordered and ordered.index(g) < idx:
                     g_idx = ordered.index(target)
-                    g_day = _start + timedelta(days=idx)
+                    g_day = _start + timedelta(days=g_idx)
 
                     post_text.append(f"`{g}` was Wordle {g_idx} ({g_day.strftime('%B %d, %Y')})")
 
