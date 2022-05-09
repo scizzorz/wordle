@@ -1,5 +1,7 @@
 from collections import defaultdict
+from datetime import timedelta
 from urllib import request
+from wordle import _start
 from wordle import format_guess
 from wordle import make_guess
 from wordle import ordered
@@ -41,18 +43,25 @@ def main(event, context):
             except ValueError:
                 target = today
 
+            idx = ordered.index(target)
+            day = _start + timedelta(days=idx)
+
             print(f"Guessing {guesses} against {target!r}")
             resp = guess(target, guesses)
             for line in resp:
                 print(line)
 
             post_text = [
+                f"Wordle {idx} for {day.strftime('%A, %B %d, %Y')}",
                 "```" + "\n".join(resp) + "```",
             ]
 
             for g in guesses:
-                if g in ordered and ordered.index(g) < ordered.index(target):
-                    post_text.append(f"`{g}` was Wordle {ordered.index(g)}")
+                if g in ordered and ordered.index(g) < idx:
+                    g_idx = ordered.index(target)
+                    g_day = _start + timedelta(days=idx)
+
+                    post_text.append(f"`{g}` was Wordle {g_idx} ({g_day.strftime('%B %d, %Y')})")
 
             # if channel or thread_ts don't exist we just quit (read: "die") I guess
             post = {
