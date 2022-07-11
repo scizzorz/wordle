@@ -16,6 +16,29 @@ import sys
 token = os.environ["TOKEN"].strip()
 
 
+def try_int(guesses):
+    idx = int(guesses[0])
+    guesses = guesses[1:]
+    target = ordered[idx]
+    return target, guesses
+
+
+def try_mmddyy(guesses):
+    for_date = date.strptime(guesses[0], "%m/%d/%y")
+    idx = (for_date - _start).days
+    guesses = guesses[1:]
+    target = ordered[idx]
+    return target, guesses
+
+
+def try_mmddyyyy(guesses):
+    for_date = date.strptime(guesses[0], "%m/%d/%Y")
+    idx = (for_date - _start).days
+    guesses = guesses[1:]
+    target = ordered[idx]
+    return target, guesses
+
+
 def main(event, context):
     # handle Slack challenge
     slack_body = event.get("body")
@@ -36,11 +59,13 @@ def main(event, context):
         elif typ == "app_mention":
             print("Event text:", event["text"])
             _, *guesses = event["text"].lower().split()
-            try:
-                idx = int(guesses[0])
-                guesses = guesses[1:]
-                target = ordered[idx]
-            except ValueError:
+            for fn in (try_int, try_mmddyy, try_mmddyyyy):
+                try:
+                    target, guesses = fn(guesses)
+                    break
+                except Exception:
+                    pass
+            else:
                 target = today
 
             idx = ordered.index(target)
