@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime
 from datetime import timedelta
 from urllib import request
 from wordle import _start
@@ -24,7 +25,7 @@ def try_int(guesses):
 
 
 def try_mmddyy(guesses):
-    for_date = date.strptime(guesses[0], "%m/%d/%y")
+    for_date = datetime.strptime(guesses[0], "%m/%d/%y")
     idx = (for_date - _start).days
     guesses = guesses[1:]
     target = ordered[idx]
@@ -32,7 +33,7 @@ def try_mmddyy(guesses):
 
 
 def try_mmddyyyy(guesses):
-    for_date = date.strptime(guesses[0], "%m/%d/%Y")
+    for_date = datetime.strptime(guesses[0], "%m/%d/%Y")
     idx = (for_date - _start).days
     guesses = guesses[1:]
     target = ordered[idx]
@@ -62,12 +63,15 @@ def main(event, context):
             for fn in (try_int, try_mmddyy, try_mmddyyyy):
                 try:
                     target, guesses = fn(guesses)
+                    print(f"Succeeded in target ID: {fn}")
                     break
-                except Exception:
+                except Exception as ex:
+                    print(f"Failed in target ID: {fn} with {ex}")
                     pass
             else:
                 target = today
 
+            print(f"Analyzing against {target}")
             idx = ordered.index(target)
             day = _start + timedelta(days=idx)
 
@@ -86,7 +90,9 @@ def main(event, context):
                     g_idx = ordered.index(g)
                     g_day = _start + timedelta(days=g_idx)
 
-                    post_text.append(f"`{g}` was Wordle {g_idx} ({g_day.strftime('%B %d, %Y')})")
+                    post_text.append(
+                        f"`{g}` was Wordle {g_idx} ({g_day.strftime('%B %d, %Y')})"
+                    )
 
             # if channel or thread_ts don't exist we just quit (read: "die") I guess
             post = {
